@@ -8,7 +8,7 @@ TABLES = {
         "id": "TEXT PRIMARY KEY",
         "ip": "TEXT NOT NULL",
         "gps_status": "BOOLEAN NOT NULL",
-        "last_login": "DATETIME NOT NULL",
+        "last_update": "DATETIME NOT NULL",
     },
     "gps_traces": {
         "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
@@ -33,25 +33,25 @@ def init_database(database_name: str):
 
 # DEVICE
 
-def insert_device(database_name: str, id: str, ip: str, gps_status: bool, last_login_datetime: str):
+def insert_device(database_name: str, id: str, ip: str, gps_status: bool, last_datetime: str):
     if check_device_exists(database_name, id):
         logger.debug(f"Device with id {id} already exists. Updating instead of inserting.")
-        return update_device(database_name, id, ip, gps_status, last_login_datetime)
+        return update_device(database_name, id, ip, gps_status, last_datetime)
     
     with sqlite3.connect(database_name) as conn:
         cursor = conn.cursor()
-        query = "INSERT INTO devices (id, ip, gps_status, last_login) VALUES (?, ?, ?, ?)"
-        logger.debug(f"Inserting device with query: {query} and values: {id}, {ip}, {gps_status}, {last_login_datetime}")
-        cursor.execute(query, (id, ip, gps_status, last_login_datetime))
+        query = "INSERT INTO devices (id, ip, gps_status, last_update) VALUES (?, ?, ?, ?)"
+        logger.debug(f"Inserting device with query: {query} and values: {id}, {ip}, {gps_status}, {last_datetime}")
+        cursor.execute(query, (id, ip, gps_status, last_datetime))
         conn.commit()
         return cursor.lastrowid
 
-def update_device(database_name: str, id: str, ip: str, gps_status: bool, last_login_datetime: str):
+def update_device(database_name: str, id: str, ip: str, gps_status: bool, last_datetime: str):
     with sqlite3.connect(database_name) as conn:
         cursor = conn.cursor()
-        query = "UPDATE devices SET ip = ?, gps_status = ?, last_login = ? WHERE id = ?"
-        logger.debug(f"Updating device with query: {query} and values: {ip}, {gps_status}, {last_login_datetime}, {id}")
-        cursor.execute(query, (ip, gps_status, last_login_datetime, id))
+        query = "UPDATE devices SET ip = ?, gps_status = ?, last_update = ? WHERE id = ?"
+        logger.debug(f"Updating device with query: {query} and values: {ip}, {gps_status}, {last_datetime}, {id}")
+        cursor.execute(query, (ip, gps_status, last_datetime, id))
         conn.commit()
         return cursor.rowcount
 

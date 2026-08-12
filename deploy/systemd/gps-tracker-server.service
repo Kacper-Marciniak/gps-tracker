@@ -1,0 +1,17 @@
+[Unit]
+Description=GPS Tracker TCP Server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gps
+WorkingDirectory=/opt/gps-tracker-server
+ExecStart=/opt/gps-tracker-server/.venv/bin/python3 /opt/gps-tracker-server/run_server.py
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

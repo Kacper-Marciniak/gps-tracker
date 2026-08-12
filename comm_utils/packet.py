@@ -2,37 +2,39 @@
 from enum import Enum
 from datetime import datetime
 
-class ProtocolType(Enum):
-    LOGIN = "2A4851"
-    TELEMETRY = "24"
+PROTOCOL_TYPES = {
+    "V1": "LOCATION_DATA",
+    "XT": "HEARTBEAT",
+    "VI1": "LOCATION_REQUEST",
+    "V4": "INSTRUCTION_ACK",
+    "BINARY": "BINARY"
+}
+PROTOCOL_REQ_RESP = ["XT", "VI1", "V4"]
 
 class Packet:
+    TEXT_DATA_PREFIX = "2A4851"
+    BINARY_DATA_PREFIX = "24"
     def __init__(self, byte_data: bytes):
         self.byte_data = byte_data
         self.hex_data = byte_data.hex().upper()
 
-        for key, value in ProtocolType.__members__.items():
-            if self.hex_data.startswith(value.value):
-                self.protocol_type = value
-                break
+        if self.hex_data.startswith(self.TEXT_DATA_PREFIX):
+            self.is_text = True
+        elif self.hex_data.startswith(self.BINARY_DATA_PREFIX):
+            self.is_text = False
         else:
-            raise ValueError(f"Unknown protocol type!")
-
-    def get_type(self):
-        return self.protocol_type
+            raise ValueError(f"Unknown data type for hex data: {self.hex_data}")
 
     def get_raw_hex(self):
         return self.hex_data
             
     def decode(self):
-        if self.protocol_type == ProtocolType.LOGIN:
-            return self.decode_login(), self.protocol_type
-        elif self.protocol_type == ProtocolType.TELEMETRY:
-            return self.decode_telemetry(), self.protocol_type
+        if self.is_text:
+            return self.decode_text_data()
         else:
-            raise ValueError(f"Unknown protocol type! {self.protocol_type}")
+            return self.decode_binary_data()
 
-    def decode_login(self):
+    def decode_text_data(self):
         hex_str = self.hex_data.strip().replace(" ", "").lower()
         ascii_text = bytes.fromhex(hex_str).decode('ascii', errors='ignore').strip()
 
@@ -47,16 +49,23 @@ class Packet:
         
         datetime_utc = datetime.strptime(payload[3] + payload[11], "%H%M%S%d%m%y")
         datetime_sql = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
+
+        latitude = float(payload[5][:2]) + float(payload[5][2:]) / 60.0
+        if payload[6] == "S": latitude = -latitude
+
+        longitude = float(payload[7][:3]) + float(payload[7][3:]) / 60.0
+        if payload[8] == "W": longitude = -longitude
+
         results = {
-            'device_id': payload[1],                          
-            'msg_type': payload[2],                                         # V1
-            'datetime': datetime_sql,                                       # SQL DATETIME compatible string
+            'device_id': payload[1],                                        # Unique device identifier
+            'msg_type': payload[2],                                         # Message type (e.g., "V1" for location data) 
+            'datetime': datetime_sql,                                       # UTC datetime in SQL format
             'gps_status': payload[4] == 'A',                                # A = valid, V = invalid
-            'latitude_raw': f"{payload[5]} {payload[6]}",                   # 000000000 S
-            'longitude_raw': f"{payload[7]} {payload[8]}",                  # 0000000000 W
-            'speed_knots': float(payload[9]),                               # 0.00
-            'heading_deg': int(payload[10]),                                # 0
-            'status_hex': payload[12],                                      # fbfffbff
+            'longitude': longitude,                                         # Longitude in decimal degrees
+            'latitude': latitude,                                           # Latitude in decimal degrees
+            'speed_kmh': float(payload[9])*1.852,                           # Speed in km/h (converted from knots)
+            'heading': int(payload[10]),                                    # Heading in degrees
+            'status_hex': payload[12],                                      # Status in hexadecimal format
             'gsm': {
                 'mcc': int(payload[13]),                                    # Country code (Poland = 260)
                 'mnc': int(payload[14]),                                    # Network code
@@ -65,88 +74,33 @@ class Packet:
             }
         }
     
-        return results
+        return results, results['msg_type']
 
-    def decode_telemetry(self):
-        hex_str = self.hex_data.strip().replace(" ", "").lower()
-
-        if len(hex_str) < 24:
-            raise ValueError(f"Incomplete telemetry frame: expected at least 24 hex characters, got {len(hex_str)}")
-
-        def read_hex(start: int, end: int, default: str = "00") -> str:
-            chunk = hex_str[start:end]
-            return chunk if chunk else default
-
-        def read_int(start: int, end: int, default: int = 0) -> int:
-            chunk = hex_str[start:end]
-            return int(chunk, 16) if chunk else default
-
-        def read_direction(start: int, end: int, default: str) -> str:
-            chunk = hex_str[start:end]
-            if len(chunk) != 2:
-                return default
-
-            try:
-                direction = chr(int(chunk, 16))
-            except ValueError:
-                return default
-
-            return direction if direction in {"N", "S", "E", "W"} else default
-        
-        device_id = hex_str[2:12]
-        
-        datetime_utc = datetime.strptime(hex_str[12:24], "%H%M%S%d%m%y")
-        datetime_sql = datetime_utc.strftime("%Y-%m-%d %H:%M:%S")
-        
-        raw_lat = hex_str[24:33]
-        raw_lat_dir = read_direction(33, 35, 'N')
-        raw_lon = hex_str[35:45]
-        raw_lon_dir = read_direction(45, 47, 'E')
-        
-        if raw_lat.isdigit() and int(raw_lat) > 0:
-            lat_deg = float(raw_lat[0:2]) + (float(raw_lat[2:]) / 10000.0) / 60.0
-            lon_deg = float(raw_lon[0:3]) + (float(raw_lon[3:]) / 10000.0) / 60.0
-            latitude = round(-lat_deg if raw_lat_dir == 'S' else lat_deg, 6)
-            longitude = round(-lon_deg if raw_lon_dir == 'W' else lon_deg, 6)
-        else:
-            latitude = 0.0
-            longitude = 0.0
-        
-        status_hex = read_hex(50, 58)
-        status_int = int.from_bytes(bytes.fromhex(status_hex), byteorder='little')
-        
-        results = {
-            'device_id': device_id,
-            'latitude': latitude,
-            'longitude': longitude,
-            'datetime': datetime_sql,
-            'speed_kmh': read_int(32, 34),
-            'heading_deg': read_int(34, 38),
-            'gps_status': bool(status_int),
-            'status_flags': {
-                'alarm_gas_cut': bool(status_int & (1 << 0)),
-                'vehicle_fortified': bool(status_int & (1 << 1)),
-                'low_battery_alarm': bool(status_int & (1 << 2)),
-                'power_cut_alarm': bool(status_int & (1 << 3)),
-                'shock_alarm': bool(status_int & (1 << 4)),
-                'acc_ignition_on': bool(status_int & (1 << 5)), # Stan zapłonu
-            },
-            'gsm': {
-                'lbs_count': read_int(74, 76),
-                'mcc': read_int(76, 78),          # Mobile Country Code
-                'mnc': read_int(78, 80),          # Mobile Network Code
-                'lac': read_int(80, 84),          # Location Area Code
-                'cell_id': read_int(84, 90),      # Cell ID
-            }
-        }
-        
-        return results
+    def decode_binary_data(self):  
+        # Ignore binary data. TODO: implement binary data decoding.     
+        return None, "BINARY"
 
     def encode(self):
         self.byte_data = bytes.fromhex(self.hex_data)
         return self.byte_data
 
     @staticmethod
-    def encode_login_response(device_id: int) -> bytes:
-        text = f"*HQ,{device_id},AP00#\r\n"
+    def encode_ack_response(device_id: int) -> bytes:
+        text = f"*HQ,{device_id},AP00#"
+        return text.encode('ascii')
+
+    @staticmethod
+    def encode_interval_setting(device_id: int, interval_seconds: int, is_driving: bool) -> bytes:
+        mode = "XT" if is_driving else "NXT"
+        text = f"*HQ,{device_id},{mode},{interval_seconds}#"
+        return text.encode('ascii')
+
+    @staticmethod
+    def encode_call_reboot(device_id: int) -> bytes:
+        text = f"*HQ,{device_id},CQ#"
+        return text.encode('ascii') 
+
+    @staticmethod
+    def encode_call_location(device_id: int) -> bytes:
+        text = f"*HQ,{device_id},CR#"
         return text.encode('ascii')
