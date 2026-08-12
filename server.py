@@ -94,7 +94,7 @@ class Server:
         finally:
             logger.info("Server is shutting down...")
             self.socket.close()
-            self.export_database(self, self.database_name.split('.')[0] + "_export.json") # Debug: Export database on shutdown TODO: remove in prod
+            self.export_database(self.database_name.split('.')[0] + "_export.json") # Debug: Export database on shutdown TODO: remove in prod
 
 if __name__ == "__main__":
     HOST = "0.0.0.0" 
