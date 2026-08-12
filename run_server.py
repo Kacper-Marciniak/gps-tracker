@@ -6,10 +6,12 @@ if __name__ == "__main__":
     HOST = "0.0.0.0" 
     PORT = 5023
     
-    LOG_NAME = datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
+    #LOG_NAME = "server_" + datetime.now().strftime("%Y%m%d_%H%M%S") + ".log"
+    LOG_NAME = "server.log"
+    DB_NAME = "database.db"
     logging.basicConfig(filename=LOG_NAME, encoding='utf-8', level=logging.INFO, format='%(asctime)s - %(levelname)s - %(name)s - %(message)s')
 
-    server = Server(host=HOST, port=PORT, db_name=LOG_NAME.split('.')[0] + ".db")
+    server = Server(host=HOST, port=PORT, db_name=DB_NAME)
 
     def _handle_shutdown(signum, _frame):
         server.stop()

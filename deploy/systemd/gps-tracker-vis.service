@@ -1,0 +1,22 @@
+[Unit]
+Description=GPS Tracker Flask Visualisation App
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=gps
+WorkingDirectory=/opt/gps-tracker-server
+
+Environment="GPS_TRACKER_USERNAME=user"
+Environment="GPS_TRACKER_PASSWORD=password"
+Environment="GPS_TRACKER_KEY=secret-key"
+
+ExecStart=/opt/gps-tracker-server/.venv/bin/python3 /opt/gps-tracker-server/run_vis_app.py
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+TimeoutStopSec=15
+
+[Install]
+WantedBy=multi-user.target

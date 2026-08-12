@@ -1,9 +1,9 @@
 # Simulated tracking device (transmitter)
 
-from comm_utils.packet import Packet, PROTOCOL_TYPES, PROTOCOL_REQ_RESP
+from comm_utils.packet import Packet, PROTOCOL_TYPES, PROTOCOL_REQ_RESP, PROTOCOL_IGNORE
+from config.device_config import DEVICE_CONFIG
 from comm_utils.socket_connection import SocketConnectionServer
 import sql_utils.sql_server as sql
-from datetime import datetime
 from queue import Empty
 import threading
 import logging
@@ -25,6 +25,9 @@ class Server:
         # Running flag to allow clean shutdown
         self._stop_event = threading.Event()
 
+        # Dictionary of devices
+        self.devices: dict[str, tuple] = {}
+
     def stop(self):
         """
         Request graceful shutdown of the server loop.
@@ -36,7 +39,7 @@ class Server:
         Export the database to a specified path.
         """
         sql.export_database(self.database_name, export_path)
-        
+
     def tick(self):
         """
         Main loop to process incoming data from the socket server.
@@ -50,16 +53,25 @@ class Server:
 
         try:
             packet_data, protocol_type = Packet(data_dict['data']).decode()
-            if protocol_type in PROTOCOL_TYPES.keys():
+            if protocol_type in PROTOCOL_IGNORE:
+                # Ignore certain protocol types, e.g., BINARY
+                logger.info(f"Ignoring {PROTOCOL_TYPES[protocol_type]} packet from {data_dict['address']}: {packet_data}")
+                return
+
+            elif protocol_type in PROTOCOL_TYPES.keys():
                 logger.info(f"Received {PROTOCOL_TYPES[protocol_type]} packet from {data_dict['address']}: {packet_data}")
                 if packet_data is not None:
+                    # Save device IP and port for future communication (session-specific)
+                    self.devices[packet_data['device_id']] = data_dict['address'][0],data_dict['address'][1]
+
                     # Insert GPS trace into the database
                     sql.insert_device(
                         database_name=self.database_name,
                         id=packet_data['device_id'],
                         ip=data_dict['address'][0],
                         gps_status=packet_data['gps_status'],
-                        last_datetime=packet_data['datetime']
+                        last_datetime=packet_data['datetime'],
+                        port=data_dict['address'][1],
                     )
                     sql.insert_gps_trace(
                         database_name=self.database_name,
@@ -68,10 +80,11 @@ class Server:
                         longitude=packet_data['longitude'],
                         datetime_str=packet_data['datetime']
                     )
-                # Respond to the HT packet
-                if protocol_type in PROTOCOL_REQ_RESP:
-                    response = Packet.encode_ack_response(device_id=packet_data['device_id'])
-                    self.socket.send_to(data_dict['address'], response)
+
+                    # Respond to the HT packet
+                    if protocol_type in PROTOCOL_REQ_RESP:
+                        response = Packet.encode_ack_response(device_id=packet_data['device_id'])
+                        self.socket.send_to(data_dict['address'], response)
             else:
                 raise ValueError(f"Unknown protocol type: {protocol_type}")
 

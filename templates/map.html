@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <title>TEST GPS APP</title>
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <link
+        rel="stylesheet"
+        href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    >
+
+    <style>
+
+        html,
+        body {
+            margin: 0;
+            height: 100%;
+            font-family: Arial, sans-serif;
+        }
+
+        .header {
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+
+            padding: 0 20px;
+
+            background: #222;
+            color: white;
+        }
+
+        .title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .logout {
+            color: white;
+            text-decoration: none;
+        }
+
+        #map {
+            height: calc(100vh - 50px);
+            width: 100%;
+        }
+
+    </style>
+
+</head>
+
+<body>
+
+<div class="header">
+
+    <div class="title">
+        GPS Tracker (Map View)
+    </div>
+
+    <a
+        class="logout"
+        href="{{ url_for('logout') }}"
+    >
+        Logout
+    </a>
+
+</div>
+
+<div id="map"></div>
+
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+
+<script>
+
+    const devices = {{ devices | tojson }};
+
+
+    // Default map position
+    const map = L.map("map").setView(
+        [51.1079, 17.0385],
+        13
+    );
+
+
+    // OpenStreetMap tiles
+    L.tileLayer(
+        "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
+        {
+            maxZoom: 19,
+            attribution: "&copy; OpenStreetMap contributors"
+        }
+    ).addTo(map);
+
+
+    // Add device markers
+    const markers = [];
+
+    devices.forEach(device => {
+
+        const marker = L.marker([
+            device.latitude,
+            device.longitude
+        ]).addTo(map);
+
+        marker.bindPopup(`
+            <b>ID: ${device.id}</b><br>
+            Latitude: ${device.latitude}<br>
+            Longitude: ${device.longitude}<br>
+            Datetime: ${device.datetime}
+        `);
+
+        markers.push(marker);
+
+        if (device.traces && device.traces.length > 1) {
+
+        const traceCoordinates = device.traces.map(point => [
+            point.latitude,
+            point.longitude
+        ]);
+
+        L.polyline(traceCoordinates).addTo(map);
+    }
+    });
+
+
+    // Automatically fit map to all devices
+    if (markers.length > 0) {
+
+        const group = L.featureGroup(markers);
+
+        map.fitBounds(
+            group.getBounds().pad(0.2)
+        );
+    }
+
+</script>
+
+</body>
+</html>

@@ -77,7 +77,7 @@ class SocketConnectionServer:
                     "address": addr,
                     "data": data
                 })
-                logger.info(f"Received data from {addr}: {data.hex().upper()}")
+                logger.info(f"Received data from {addr}: {data.hex().upper()} | {data.decode('ascii', errors='ignore').strip()}")
 
         except (ConnectionResetError, BrokenPipeError, OSError):
             pass
@@ -114,7 +114,7 @@ class SocketConnectionServer:
         for addr, conn in clients:
             try:
                 conn.sendall(data)
-                logger.info(f"Sent data to {addr}: {data.hex().upper()}")
+                logger.info(f"Sent data to {addr}: {data.hex().upper()} | {data.decode('ascii', errors='ignore').strip()}")
             except (ConnectionResetError, BrokenPipeError, OSError):
                 logger.error(f"Failed to send data to {addr}.")
                 self._remove_client(conn, addr)
@@ -136,7 +136,7 @@ class SocketConnectionServer:
 
         try:
             conn.sendall(data)
-            logger.info(f"Sent data to {addr}: {data.hex().upper()}")
+            logger.info(f"Sent data to {addr}: {data.hex().upper()} | {data.decode('ascii', errors='ignore').strip()}")
         except (ConnectionResetError, BrokenPipeError, OSError):
             logger.error(f"Failed to send data to {addr}.")
             self._remove_client(conn, addr)

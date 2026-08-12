@@ -9,6 +9,7 @@ PROTOCOL_TYPES = {
     "V4": "INSTRUCTION_ACK",
     "BINARY": "BINARY"
 }
+PROTOCOL_IGNORE = ["BINARY"]
 PROTOCOL_REQ_RESP = ["XT", "VI1", "V4"]
 
 class Packet:
