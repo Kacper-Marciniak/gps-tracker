@@ -5,14 +5,10 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=gps
-WorkingDirectory=/opt/gps-tracker-server
+User=kacpermarciniak1998
+WorkingDirectory=/home/kacpermarciniak1998/gps-server
 
-Environment="GPS_TRACKER_USERNAME=user"
-Environment="GPS_TRACKER_PASSWORD=password"
-Environment="GPS_TRACKER_KEY=secret-key"
-
-ExecStart=/opt/gps-tracker-server/.venv/bin/python3 /opt/gps-tracker-server/run_vis_app.py
+ExecStart=/home/kacpermarciniak1998/gps-server/.venv/bin/python3 /home/kacpermarciniak1998/gps-server/run_vis_app.py
 Restart=always
 RestartSec=3
 KillSignal=SIGTERM

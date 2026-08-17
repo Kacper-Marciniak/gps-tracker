@@ -14,10 +14,14 @@ TABLES = {
     },
     "gps_traces": {
         "id": "INTEGER PRIMARY KEY AUTOINCREMENT",
-        "device_id": "INTEGER NOT NULL",
+        "device_id": "TEXT NOT NULL",
         "latitude": "REAL NOT NULL",
         "longitude": "REAL NOT NULL",
         "datetime": "DATETIME NOT NULL",
+        "speed": "REAL",
+        "heading": "REAL",
+        "battery": "INTEGER",
+        "heartbeat": "BOOLEAN DEFAULT 0",
         "FOREIGN KEY(device_id)": "REFERENCES devices(id)",
     }
 }
@@ -75,12 +79,12 @@ def get_all_devices(database_name: str):
 
 # GPS TRACE
 
-def insert_gps_trace(database_name: str, device_id: str, latitude: float, longitude: float, datetime_str: str):
+def insert_gps_trace(database_name: str, device_id: str, latitude: float, longitude: float, datetime_str: str, speed: float = None, heading: float = None, battery: int = None, heartbeat: bool = False):
     with sqlite3.connect(database_name) as conn:
         cursor = conn.cursor()
-        query = "INSERT INTO gps_traces (device_id, latitude, longitude, datetime) VALUES (?, ?, ?, ?)"
-        logger.debug(f"Inserting GPS trace with query: {query} and values: {device_id}, {latitude}, {longitude}, {datetime_str}")
-        cursor.execute(query, (device_id, latitude, longitude, datetime_str))
+        query = "INSERT INTO gps_traces (device_id, latitude, longitude, datetime, speed, heading, battery, heartbeat) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
+        logger.debug(f"Inserting GPS trace with query: {query} and values: {device_id}, {latitude}, {longitude}, {datetime_str}, {speed}, {heading}, {battery}, {heartbeat}")
+        cursor.execute(query, (device_id, latitude, longitude, datetime_str, speed, heading, battery, heartbeat))
         conn.commit()
         return cursor.lastrowid
 

@@ -1,6 +1,6 @@
 # Simulated tracking device (transmitter)
 
-from comm_utils.packet import Packet, PROTOCOL_TYPES, PROTOCOL_REQ_RESP, PROTOCOL_IGNORE
+from comm_utils.packet import Packet, PROTOCOL_TYPES, PROTOCOL_REQ_RESP, PROTOCOL_IGNORE, PROTOCOL_DEVICE_UPDATE, PROTOCOL_ADD_TRACE
 from config.device_config import DEVICE_CONFIG
 from comm_utils.socket_connection import SocketConnectionServer
 import sql_utils.sql_server as sql
@@ -26,7 +26,7 @@ class Server:
         self._stop_event = threading.Event()
 
         # Dictionary of devices
-        self.devices: dict[str, tuple] = {}
+        self.devices: dict[str, dict] = {}
 
     def stop(self):
         """
@@ -54,32 +54,47 @@ class Server:
         try:
             packet_data, protocol_type = Packet(data_dict['data']).decode()
             if protocol_type in PROTOCOL_IGNORE:
-                # Ignore certain protocol types, e.g., BINARY
+                # Ignore certain protocol types
                 logger.info(f"Ignoring {PROTOCOL_TYPES[protocol_type]} packet from {data_dict['address']}: {packet_data}")
                 return
 
             elif protocol_type in PROTOCOL_TYPES.keys():
                 logger.info(f"Received {PROTOCOL_TYPES[protocol_type]} packet from {data_dict['address']}: {packet_data}")
                 if packet_data is not None:
-                    # Save device IP and port for future communication (session-specific)
-                    self.devices[packet_data['device_id']] = data_dict['address'][0],data_dict['address'][1]
+                    
+                    if packet_data['device_id'] not in self.devices:
+                        logger.info(f"New device detected: {packet_data['device_id']} at {data_dict['address']}")
 
+                    # Save device IP and port for future communication (session-specific)
+                    self.devices[packet_data['device_id']] = {
+                        "ip": data_dict['address'][0],
+                        "port": data_dict['address'][1]
+                    }
+
+                    # Insert device into the database
+                    if protocol_type in PROTOCOL_DEVICE_UPDATE:
+                        sql.insert_device(
+                            database_name=self.database_name,
+                            id=packet_data['device_id'],
+                            ip=data_dict['address'][0],
+                            gps_status=packet_data['gps_status'],
+                            last_datetime=packet_data['datetime'],
+                            port=data_dict['address'][1],
+                        )
+                    
                     # Insert GPS trace into the database
-                    sql.insert_device(
-                        database_name=self.database_name,
-                        id=packet_data['device_id'],
-                        ip=data_dict['address'][0],
-                        gps_status=packet_data['gps_status'],
-                        last_datetime=packet_data['datetime'],
-                        port=data_dict['address'][1],
-                    )
-                    sql.insert_gps_trace(
-                        database_name=self.database_name,
-                        device_id=packet_data['device_id'],
-                        latitude=packet_data['latitude'],
-                        longitude=packet_data['longitude'],
-                        datetime_str=packet_data['datetime']
-                    )
+                    if protocol_type in PROTOCOL_ADD_TRACE:
+                        sql.insert_gps_trace(
+                            database_name=self.database_name,
+                            device_id=packet_data['device_id'],
+                            latitude=packet_data['latitude'],
+                            longitude=packet_data['longitude'],
+                            datetime_str=packet_data['datetime'],
+                            speed=packet_data.get('speed_kmh', None),
+                            heading=packet_data.get('heading', None),
+                            battery=packet_data.get('battery', None),
+                            heartbeat=packet_data.get('heartbeat', False)
+                        )
 
                     # Respond to the HT packet
                     if protocol_type in PROTOCOL_REQ_RESP:
