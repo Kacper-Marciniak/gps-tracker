@@ -136,10 +136,9 @@ class Packet:
 
         longitude_direction = DIRECTION_MAP.get(direction_nibble)
 
-        speed = bcd_byte(payload[22])*10
-        heading = bcd_byte(payload[23])
-
-        speed_kmh = float(speed) * 1.852
+        speed_and_direction = f"{payload[22]:02X}{payload[23]:02X}{payload[24]:02X}"
+        speed_kmh = float(int(speed_and_direction[:3])) * 1.852
+        heading = int(speed_and_direction[3:])        
 
         status_hex = payload[25:29].hex().upper()
 
