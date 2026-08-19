@@ -1,0 +1,101 @@
+/* ========================================
+   GPS PAGE
+   ======================================== */
+
+.gps-map-wrapper{
+    display: flex;
+    flex-direction: column;
+
+    position: relative;
+
+    width: 100%;
+    height: 100%;
+
+    flex-grow: 1;
+
+    min-height: 300px;
+}
+
+.gps-controls-trace {
+    width: 100%;
+
+    display: flex;
+    flex-direction: row;
+
+    align-items: flex-end;
+    gap: 15px;
+    
+    padding: 5px 10px;
+}
+
+.gps-control-device {
+    flex: 1;
+}
+
+.gps-control-date {
+    flex: 1;
+}
+
+.control-label {
+    display: block;
+
+    margin-bottom: 5px;
+
+    font-weight: 600;
+}
+
+.gps-controls-accordion {
+    position: absolute;
+  
+    top: 5px;
+    left: 50px;
+  
+    width: calc(100% - 50px - 5px);
+  
+    z-index: 1000;
+}
+
+
+/* ========================================
+   MAP
+   ======================================== */
+
+.gps-map-container {
+    width: 100%;
+    height: 100%;
+    flex-grow: 1;
+
+    position: absolute;
+    inset: 0;
+}
+
+/* ========================================
+   POPUP
+   ======================================== */
+
+.gps-popup > * {
+    font-size: 14px;
+    margin: 0 !important;
+    margin-bottom: 0.5rem !important;
+}
+
+/* ========================================
+   MOBILE
+   ======================================== */
+
+@media (max-width: 700px) {
+
+    .gps-controls-trace {
+        
+        flex-direction: column;        
+        align-items: stretch;
+        gap: 5px;
+
+    }
+
+    .gps-controls-trace > h4 {
+        
+        font-size: 1.125rem;
+
+    }
+}

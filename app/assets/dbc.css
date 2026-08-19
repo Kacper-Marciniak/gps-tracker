@@ -1,0 +1,16 @@
+/* ========================================
+   ACCORDION
+   ======================================== */
+
+
+.accordion-header {
+    padding: 0 !important;
+}
+
+.accordion-body {
+    padding: 0.5rem 1rem !important;
+}
+
+.accordion-button {
+    padding: 0.5rem 1rem !important;
+}

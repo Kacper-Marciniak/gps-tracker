@@ -91,7 +91,7 @@ def insert_gps_trace(database_name: str, device_id: str, latitude: float, longit
 def get_last_gps_trace(database_name: str, device_id: int):
     with sqlite3.connect(database_name) as conn:
         cursor = conn.cursor()
-        query = "SELECT * FROM gps_traces WHERE device_id = ? ORDER BY datetime DESC LIMIT 1"
+        query = "SELECT * FROM gps_traces WHERE device_id = ? AND heartbeat = false ORDER BY datetime DESC LIMIT 1"
         logger.debug(f"Fetching last GPS trace with query: {query} and device_id: {device_id}")
         cursor.execute(query, (device_id,))
         return cursor.fetchone()
@@ -102,7 +102,7 @@ def get_gps_traces_between_datetimes(database_name: str, device_id: int, start_d
             current_utc_time = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
             end_datetime = current_utc_time
         cursor = conn.cursor()
-        query = "SELECT * FROM gps_traces WHERE device_id = ? AND datetime BETWEEN ? AND ? ORDER BY datetime DESC"
+        query = "SELECT * FROM gps_traces WHERE device_id = ? AND heartbeat = false AND datetime BETWEEN ? AND ? ORDER BY datetime DESC"
         logger.debug(f"Fetching GPS traces between datetimes with query: {query} and values: {device_id}, {start_datetime}, {end_datetime}")
         cursor.execute(query, (device_id, start_datetime, end_datetime))
         return cursor.fetchall()
@@ -110,7 +110,7 @@ def get_gps_traces_between_datetimes(database_name: str, device_id: int, start_d
 def get_all_gps_traces(database_name: str, device_id: int):
     with sqlite3.connect(database_name) as conn:
         cursor = conn.cursor()
-        query = "SELECT * FROM gps_traces WHERE device_id = ? ORDER BY datetime DESC"
+        query = "SELECT * FROM gps_traces WHERE device_id = ? AND heartbeat = false  ORDER BY datetime DESC"
         logger.debug(f"Fetching all GPS traces with query: {query} and device_id: {device_id}")
         cursor.execute(query, (device_id,))
         return cursor.fetchall()

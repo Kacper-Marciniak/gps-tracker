@@ -1,0 +1,186 @@
+/* ========================================
+   GLOBAL DEFAULTS
+   ======================================== */
+
+html,
+body {
+    margin: 0;
+    padding: 0;
+
+    font-family: Calibri, Arial, sans-serif;
+    font-size: 16px;
+    line-height: 1.4;
+
+    color: rgb(48, 48, 48);
+
+    width: 100%;
+    min-height: 100%;
+}
+
+
+/* Dash root */
+
+#react-entry-point {
+    min-height: 100vh;
+}
+
+
+/* ========================================
+   TEXT
+   ======================================== */
+
+p,
+pre,
+span,
+label,
+div {
+    font-family: inherit;
+    color: inherit;
+    font-size: 1rem;
+}
+
+p {
+    margin-top: 0;
+    margin-bottom: 1rem;
+}
+
+
+/* ========================================
+   HEADINGS
+   ======================================== */
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    margin-top: 0;
+
+    font-family: inherit;
+    font-weight: 600;
+    line-height: 1.2;
+
+    color: inherit;
+}
+
+h1 {
+    font-size: 2rem;
+}
+
+h2 {
+    font-size: 1.5rem;
+    text-transform: uppercase;
+}
+
+h3 {
+    font-size: 1.375rem;
+}
+
+h4 {
+    font-size: 1.25rem;
+}
+
+h5 {
+    font-size: 1.125rem;
+}
+
+h6 {
+    font-size: 1rem;
+}
+
+
+/* ========================================
+   PREFORMATTED TEXT
+   ======================================== */
+
+pre {
+    white-space: pre-wrap;
+    overflow-wrap: break-word;
+}
+
+
+/* ========================================
+   FORM ELEMENTS
+   ======================================== */
+
+textarea,
+input,
+select,
+button {
+    font-family: inherit;
+    font-size: 1rem;
+}
+
+textarea {
+    resize: vertical;
+    overflow-wrap: break-word;
+}
+
+
+/* ========================================
+   LINKS
+   ======================================== */
+
+a {
+    color: inherit;
+    text-decoration: none;
+}
+
+a:hover {
+    text-decoration: none;
+}
+
+
+/* ========================================
+   IMAGES
+   ======================================== */
+
+img {
+    max-width: 100%;
+}
+
+/* ========================================
+   MOBILE
+   ======================================== */
+
+@media (max-width: 700px) {
+
+    h1 {
+        font-size: 1.5rem;
+    }
+
+    h2 {
+        font-size: 1.375rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+    }
+
+    h4 {
+        font-size: 1.125rem;
+    }
+
+    h5 {
+        font-size: 1rem;
+    }
+
+    h6 {
+        font-size: 1rem;
+    }
+
+    p,
+    pre,
+    span,
+    label,
+    div,
+    textarea,
+    input,
+    select,
+    button {
+        font-size: 0.875rem;
+    }
+
+}
+

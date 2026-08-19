@@ -8,4 +8,8 @@ load_dotenv(dotenv_path=dotenv_path)
 
 USERNAME = os.environ["GPS_TRACKER_USERNAME"]
 PASSWORD = os.environ["GPS_TRACKER_PASSWORD"]
-KEY = os.environ["GPS_TRACKER_KEY"]
+SECRET_KEY = os.environ["GPS_TRACKER_KEY"]
+
+VALID_USERNAME_PASSWORD_PAIRS = {
+    USERNAME: PASSWORD
+}
