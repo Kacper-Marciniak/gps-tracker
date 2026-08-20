@@ -117,6 +117,8 @@ class Server:
         except KeyboardInterrupt:
             logger.info("KeyboardInterrupt received, shutting down...")
             self.stop()
+        except Exception as e:
+            logger.error(f"Unexpected error: {e}")
         finally:
             logger.info("Server is shutting down...")
             self.socket.close()
